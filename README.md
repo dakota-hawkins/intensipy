@@ -3,7 +3,7 @@ Normalize intensity values in 3D image stacks.
 
 # Current Methods
 
-## 1. [Intesify3D](https://github.com/nadavyayon/Intensify3D)
+## 1. [Intensify3D](https://github.com/nadavyayon/Intensify3D)
 
 Python implementation of the Intensify3D algorithm originally developed by [Yoyan et al](https://www.nature.com/articles/s41598-018-22489-1). There are some minor adjustments:
 
