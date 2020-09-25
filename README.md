@@ -26,8 +26,10 @@ Clone the repository and from the terminal run:
 # Example
 
 ```python
-from intensipy import Intensify
 import numpy as np
+import matplotlib.pyplot as plt
+
+from intensipy import Intensify
 
 # decreasing average intensity as z increases.
 img_stack = 1 / np.arange(1, 6)[:, np.newaxis, np.newaxis]\
