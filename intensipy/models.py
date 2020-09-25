@@ -225,9 +225,10 @@ class Intensify:
         semi_max = agg_quantiles[-1]
         transform = interpolate.interp1d(np.arange(self.n_quantiles),
                                          agg_quantiles)
-        if verbose:
-            print("Normalizing intensity values across z-dimension.")
+
         if self.z_norm:
+            if verbose:
+                print("Normalizing intensity values across z-dimension.")
             for i in Intensify.get_iterator(z_stack.shape[0], verbose):
                 normed[i] = self.z_normalize(normed[i], thresholds[i],
                                              transform,
