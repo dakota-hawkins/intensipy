@@ -10,13 +10,10 @@ Python implementation of the Intensify3D algorithm originally developed by [Yoya
   1. Pixels that are quantile normalized are subsequently smoothed using they Savitzky-Galoy method outlined in the original paper. In practice this was necessary to reduce artefact noise.
   2. Tissue detection is not currently supported.
 
-
-### Results Comparison
-
-#### Original Paper Results
+### Original Paper Results
 ![Original](https://raw.githubusercontent.com/nadavyayon/Intensify3D/master/Examples/Montage2-01.jpg)
 
-#### Intensipy Results
+### Intensipy Results
 ![Artificial Data](images/artificial_results.png)
 
 
