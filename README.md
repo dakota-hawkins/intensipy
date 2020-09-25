@@ -7,7 +7,7 @@ Normalize intensity values in 3D image stacks.
 
 Python implementation of the Intensify3D algorithm originally developed by [Yoyan et al](https://www.nature.com/articles/s41598-018-22489-1). There are some minor adjustments:
 
-  1. Pixels that are quantile normalized are subsequently smoothed using they Savitzky-Galoy method outlined in the original paper. In practice this was necessary to reduce artefact noise.
+  1. Pixels that are quantile normalized are optionally smoothed using they Savitzky-Galoy method outlined in the original paper. In practice this was necessary to reduce artefact noise.
   2. Tissue detection is not currently supported.
 
 ### Original Paper Results
