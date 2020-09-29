@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='intensipy',
-      version='0.1',
+      version='0.1.0',
       description="Normalize intensity values in 3D images.",
       url='https://github.com/dakota-hawkins/intensipy',
       author='Dakota Y. Hawkins',
