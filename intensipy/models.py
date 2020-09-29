@@ -52,6 +52,10 @@ class Intensify:
         keep_original_scale : bool, optional
             Whether minimum and maximum values should be consistent with the
             original image bit depth. Default is True.
+        stretch_method : str, optional
+            Method used to perform contrast stretching. Default is 'skimage'. To
+            run origianl Intensipy3D implementation -- as best discerned via
+            source code -- set to 'intensify3d'.
         bits : int, optional
             Bit depth of original image. Default is 12.
 
