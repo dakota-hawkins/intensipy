@@ -17,19 +17,17 @@ Python implementation of the Intensify3D algorithm originally developed by [Yoya
 ![Original](https://raw.githubusercontent.com/nadavyayon/Intensify3D/master/Examples/Montage2-01.jpg)
 
 ### Intensipy Results
-![Artificial Data](images/artificial_results.png)
+![Artificial Data](https://media.githubusercontent.com/media/dakota-hawkins/intensipy/master/images/artificial_results.png)
 
 ### Z-normalization Example
-![Confocal Embryo Image](images/embryo_example.png)
+![Confocal Embryo Image](https://github.com/dakota-hawkins/intensipy/blob/master/images/embryo_example.png)
 
 ### Average Intensity Comparison 
-![Scatterplot](images/average_intensity.png)
+![Scatterplot](https://media.githubusercontent.com/media/dakota-hawkins/intensipy/master/images/average_intensity.png)
 
 # Installation
 
-Clone the repository and from the terminal run:
-
-```pip install .```
+```pip install intensipy```
 
 # Example
 
