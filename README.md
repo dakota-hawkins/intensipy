@@ -22,6 +22,9 @@ Python implementation of the Intensify3D algorithm originally developed by [Yoya
 ### Z-normalization Example
 ![Confocal Embryo Image](images/embryo_example.png)
 
+### Average Intensity Comparison 
+![Scatterplot](images/average_intensity.png)
+
 # Installation
 
 Clone the repository and from the terminal run:
