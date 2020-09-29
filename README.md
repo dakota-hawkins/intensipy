@@ -3,10 +3,8 @@ Normalize intensity values in 3D image stacks.
 
 # Installation
 
-Clone the repository and from the terminal run:
-
-```pip install .```
-
+```pip install intensipy```
+`
 # Current Methods
 
 ## 1. [Intensify3D](https://github.com/nadavyayon/Intensify3D)
@@ -30,10 +28,6 @@ Python implementation of the Intensify3D algorithm originally developed by [Yoya
 
 ### Average Intensity Comparison 
 ![Scatterplot](https://media.githubusercontent.com/media/dakota-hawkins/intensipy/master/images/average_intensity.png)
-
-# Installation
-
-```pip install intensipy```
 
 # Example
 
