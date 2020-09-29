@@ -24,7 +24,7 @@ class Intensify:
     """Class to perform Intensify3D over a 3-Dimensional image stack."""
 
     def __init__(self, xy_norm=True, z_norm=True,
-                 t=None, dy=None, dx=None, n_quantiles=10000,
+                 background=False, dy=None, dx=None, n_quantiles=10000,
                  smooth_quartiles=True, keep_original_scale=True,
                  bits=12):
         """
@@ -61,6 +61,7 @@ class Intensify:
         """
         self.xy_norm = xy_norm
         self.z_norm = z_norm
+        self.background = background 
         self.dy = dy
         self.dx = dx
         self.n_quantiles = n_quantiles
@@ -90,6 +91,21 @@ class Intensify:
         if not isinstance(value, bool):
             raise ValueError("Expected boolean value for `z_norm`.")
         self.z_norm_ = value
+
+    @property
+    def background(self):
+        """Whether to perform background/tissue selection."""
+        return self.background_
+
+    @background.setter
+    def background(self, value):
+        if not isinstance(value, bool):
+            if isinstance(value, int) and value in [0, 1]:
+                value = bool(value)
+            else:
+                raise ValueError("Expected boolean value for `background.`")
+        self.background_ = value 
+
     
     @property
     def dy(self):
@@ -183,6 +199,15 @@ class Intensify:
         """
         # convert z-stack to numpy array if dask
         z_stack = self.__check_stack(z_stack)
+        # select foreground pixels only 
+        fg = np.ones_like(z_stack, dtype=bool)
+        # need to normalize background
+        if self.background:
+            fg = np.array([x >= filters.threshold_otsu(x) for x in z_stack])
+            for i in range(z_stack.shape[0]):
+                # forcing negative numbers?
+                pass
+                # z_stack[i] -= z_stack[i][fg[i]].min()
                    
         # set defaults if no user specified parameters
         if self.keep_original_scale:
@@ -194,11 +219,13 @@ class Intensify:
                 raise ValueError("Parameter `t` provided, but "
                                  "no reference slice provided. Set `ref_idx` "
                                  "before calling.")
-            cutoff = stats.percentileofscore(z_stack[ref_idx].flatten(), t)
-            thresholds = np.array([np.percentile(x.flatten(), cutoff)\
-                               for x in z_stack])
+            cutoff = stats.percentileofscore(z_stack[ref_idx][fg[ref_idx]], t)
         else:
-            thresholds = np.array([filters.threshold_otsu(x) for x in z_stack])
+            cutoff = 98
+        thresholds = np.array([np.percentile(x[fg[i]], cutoff)\
+                              for i, x in enumerate(z_stack)])
+        thresholds = np.array([filters.threshold_otsu(x) for x in z_stack])
+            
 
         # create empty z-stack for normalized data
         normed = np.zeros_like(z_stack, dtype='float')
@@ -210,14 +237,15 @@ class Intensify:
             print("Normalizing intensity values across xy-dimensions.")
         if self.xy_norm_:
             for i in Intensify.get_iterator(z_stack.shape[0], verbose):
-                normed[i], thresholds[i] = self.xy_normalize(np.array(z_stack[i]),
-                                                             thresholds[i])
+                normed[i], thresholds[i] = self.xy_normalize(z_stack[i],
+                                                             thresholds[i],
+                                                             fg[i])
                 semi_quantiles[i, :] = np.percentile(normed[i][normed[i] < thresholds[i]],
                                                      p_quantiles)
         else:
             normed = z_stack.copy()
             for i in range(z_stack.shape[0]):
-                semi_quantiles[i, :] = np.percentile(normed[i][normed[i] < thresholds[i]],
+                semi_quantiles[i, :] = np.percentile(normed[i][fg[i]],
                                                      p_quantiles)
         # create variables for semi-quantile normalization
         agg_quantiles = np.percentile(semi_quantiles, 98, axis=0)
@@ -231,11 +259,11 @@ class Intensify:
                 print("Normalizing intensity values across z-dimension.")
             for i in Intensify.get_iterator(z_stack.shape[0], verbose):
                 normed[i] = self.z_normalize(normed[i], thresholds[i],
-                                             transform,
+                                             fg[i], transform,
                                              semi_median, semi_max)
         return self.standardize_output(normed)
 
-    def xy_normalize(self, img, t, smooth='savitzky-galore'):
+    def xy_normalize(self, img, t, fg, smooth='savitzky-galore'):
         """
         Normalize along the XY plane.
 
@@ -245,6 +273,8 @@ class Intensify:
             Image to normalize.
         t : int, float
             Maximum background intensity in image.
+        fg : np.ndarray, bool
+            Boolean array indicating tissue / foreground pixels.
         smooth : str, optional
             Method to smooth sampled background pixels. Default is
             'savitzky-galore' per original paper.
@@ -254,20 +284,19 @@ class Intensify:
         np.ndarray
             XY normalized image.
         """
-        # select foreground pixels 
-        fg = img >= t
         # replace high signal region with randomly sampled background
-        # intensities
-        mask = self.smooth_background(img, fg, smooth)
+        # intensities. Select only tissue if background true.
+        maxes = img >= t
+        mask = self.smooth_background(img, maxes, fg, t, smooth)
         mask /= mask.max()
         # divide normalize original image
         norm_xy = img / mask
         # standardize to old values
         norm_xy /= (np.median(norm_xy) / np.median(img))
-        new_t = norm_xy[np.logical_and(fg, norm_xy > 0)].min()
+        new_t = norm_xy[maxes].min()
         return (norm_xy, new_t)
 
-    def smooth_background(self, img, selected, method='savitzky-galore'):
+    def smooth_background(self, img, maxes, tissue, t, method='savitzky-galore'):
         """
         Extract selected pixels from image. Replace with sampled and smooth
         pixels from remaining. 
@@ -276,8 +305,12 @@ class Intensify:
         ----------
         img : np.ndarray
             Image to foreground extract + background smooth. 
-        selected : np.ndarray
-            Boolean array indicating which pixels to replace with background.
+        maxes : np.ndarray, bool
+            Boolean array indicating pixels past maximum background thresholds.
+        tissue : np.ndarray
+            Boolean array indicating which pixels contain tissue/foreground.
+        t : int, float
+            Maximum background intensity. Used when `background=True`.
         method : str, optioanl
             Method to smooth sampled pixels with. Default is 'savitzky-galore`
             per original paper.
@@ -294,8 +327,11 @@ class Intensify:
             Raises error if unknown smooth method is passed.
         """
         mask = img.copy()
-        mask[selected] = Intensify.sample_background(img[~selected],
-                                                     selected.sum())
+        mask[maxes] = Intensify.sample_background(img[np.logical_xor(tissue,
+                                                                     maxes)],
+                                                  maxes.sum())
+        if self.background:
+            mask[~tissue] = t // 2
         if method == 'savitzky-galore':
             mask = Intensify.savitzky_galoy(mask, dy=self.dy, dx=self.dx, k=1)
         elif method == 'gaussian':
@@ -306,7 +342,7 @@ class Intensify:
             raise ValueError(f"Unsupported smoothing operation: {method}.")
         return mask
 
-    def z_normalize(self, img, t, transform, semi_median, semi_max):
+    def z_normalize(self, img, t, tissue, transform, semi_median, semi_max):
         """
         Normalize an image along the Z dimension using semi-quantile normalizaiton. 
 
@@ -316,6 +352,8 @@ class Intensify:
             Image to normalize.
         t : int, float
             Maximum background intensity.
+        tissue : np.ndarray, bool
+            Boolean array indicating background pixels. 
         transform : callable
             Function to transform quantile position to intensity value.
         semi_median : int, float
@@ -328,22 +366,24 @@ class Intensify:
         np.ndarray
             Z normalized image.
         """
-        (lower, upper) = np.percentile(img[img > 0], [25, 99])
-        fg = img >= t
+        (lower, upper) = np.percentile(img[tissue], [25, 99])
+        maxes = img >= t
+        signal = np.logical_xor(tissue, maxes)
         # perform constrast stretching on foreground pixels
-        img[fg] = Intensify.constrast_stretch(img[fg], lower, upper,
-                                              semi_median, semi_max)
+        img[maxes] = Intensify.constrast_stretch(img[maxes], lower, upper,
+                                                 semi_median, semi_max)
         # quantile normalization on background pixels
-        img[~fg] = Intensify.quantile_normalization(img[~fg],
-                                                    self.n_quantiles,
-                                                    transform)
+        img[signal] = Intensify.quantile_normalization(img[signal],
+                                                       self.n_quantiles,
+                                                       transform)
         # re-scale foreground intensities
-        img[fg] *= np.max(img[~fg]) / np.min(img[fg])
+        img[maxes] *= np.max(img[signal]) / np.min(img[maxes])
         # quantile normalization produces a decent amount of static:
         # suggested to smooth similar to xy smoothing of background
         if self.smooth_quartiles:
-            mask = self.smooth_background(img, fg, 'savitzky-galore')
-            img[~fg] = mask[~fg]
+            mask = self.smooth_background(img, maxes, signal, t,
+                                          'savitzky-galore')
+            img[signal] = mask[signal]
         return img
 
     def standardize_output(self, img):
@@ -362,6 +402,11 @@ class Intensify:
 # ---------------------------- Private Helper Functions ------------------------  
     def __check_stack(self, z_stack):
         """Check whether stack is a Dask array. Convert to numpy."""
+        dtype = z_stack.dtype
+        # xy_norm creates a float tensor, z_norm requires float tensor for
+        # rescaling
+        if not self.xy_norm and self.z_norm:
+            dtype = float 
         has_dask = False
         try:
             from dask.array import Array
@@ -371,8 +416,8 @@ class Intensify:
         if has_dask and isinstance(z_stack, Array):
             print("Normalization with Dask arrays is not currently supported." \
                   " Converting to numpy.")
-            z_stack = np.array(z_stack)
-        return z_stack
+            z_stack = np.array(z_stack, dtype=dtype)
+        return z_stack.astype(dtype)
 
 
     def __init_scale_variables(self, z_stack):
@@ -474,6 +519,8 @@ class Intensify:
         out = (pixels - lower)\
             * ((semi_max - semi_median) / (upper - lower))\
             + semi_median
+        out = exposure.rescale_intensity(pixels,
+                                         out_range=(semi_median, semi_max))
         return out
 
     @staticmethod
