@@ -10,12 +10,17 @@ Python implementation of the Intensify3D algorithm originally developed by [Yoya
   1. Semi-quantile normalization is the only Z-normalization method currently implemented.
   2. Pixels that are quantile normalized are optionally smoothed using they Savitzky-Galoy method outlined in the original paper. In practice this was necessary to reduce artefact noise.
   3. Tissue detection is not currently supported.
+  4. By default, contrast stretching is performed by `skimage.exposure.rescale_intensity()`. To perform contrast stretching as implemented by the original *Intensify3D*, set `stretch_method='intensify3d'` 
+  5. If no maximum background intensity threshold `t` is provided, `t` will be estimated for each slice using Otsu's method.
 
 ### Original Paper Results
 ![Original](https://raw.githubusercontent.com/nadavyayon/Intensify3D/master/Examples/Montage2-01.jpg)
 
 ### Intensipy Results
 ![Artificial Data](images/artificial_results.png)
+
+### Z-normalization Example
+![Confocal Embryo Image](images/embryo_example.png)
 
 # Installation
 
@@ -46,9 +51,6 @@ for each in out:
     plt.imshow(each, vmin=out.min(), vmax=out.max(), cmap='gray') 
     plt.show()
 ```
-
-# Issues:
-1. Low contrast images produce low contrast image slices. Expanding contrast may be necessary for downstream analysis. Enabling tissue detection may help.
 
 # References
 
