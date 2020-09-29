@@ -7,30 +7,6 @@ Clone the repository and from the terminal run:
 
 ```pip install .```
 
-# Example
-
-```python
-import numpy as np
-import matplotlib.pyplot as plt
-
-from intensipy import Intensify
-
-# decreasing average intensity as z increases.
-img_stack = 1 / np.arange(1, 6)[:, np.newaxis, np.newaxis]\
-          * np.random.randint(0, 255, (5, 512, 512))                           
-
-for each in img_stack: 
-    plt.imshow(each, vmin=img_stack.min(), vmax=img_stack.max(), cmap='gray') 
-    plt.show()
-
-model = Intensify()
-out = model.normalize(img_stack)
-
-for each in out: 
-    plt.imshow(each, vmin=out.min(), vmax=out.max(), cmap='gray') 
-    plt.show()
-```
-
 # Current Methods
 
 ## 1. [Intensify3D](https://github.com/nadavyayon/Intensify3D)
@@ -54,6 +30,30 @@ Python implementation of the Intensify3D algorithm originally developed by [Yoya
 
 ### Average Intensity Comparison 
 ![Scatterplot](images/average_intensity.png)
+
+# Example
+
+```python
+import numpy as np
+import matplotlib.pyplot as plt
+
+from intensipy import Intensify
+
+# decreasing average intensity as z increases.
+img_stack = 1 / np.arange(1, 6)[:, np.newaxis, np.newaxis]\
+          * np.random.randint(0, 255, (5, 512, 512))                           
+
+for each in img_stack: 
+    plt.imshow(each, vmin=img_stack.min(), vmax=img_stack.max(), cmap='gray') 
+    plt.show()
+
+model = Intensify()
+out = model.normalize(img_stack)
+
+for each in out: 
+    plt.imshow(each, vmin=out.min(), vmax=out.max(), cmap='gray') 
+    plt.show()
+```
 
 # References
 
