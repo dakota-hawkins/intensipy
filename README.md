@@ -1,6 +1,12 @@
 # intensipy
 Normalize intensity values in 3D image stacks.
 
+# Installation
+
+Clone the repository and from the terminal run:
+
+```pip install .```
+
 # Current Methods
 
 ## 1. [Intensify3D](https://github.com/nadavyayon/Intensify3D)
